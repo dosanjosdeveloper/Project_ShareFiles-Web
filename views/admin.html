@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Admin</title>
+  <meta charset="UTF-8" />
+  <style>
+    body {
+      background-color: #fff3e0;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      color: #333;
+    }
+
+    h1,
+    h2 {
+      color: #bf360c;
+    }
+
+    form {
+      margin-bottom: 20px;
+    }
+
+    input[type="file"] {
+      padding: 8px;
+      margin-right: 10px;
+    }
+
+    button,
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      background-color: #81c784;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+      text-decoration: none;
+    }
+
+    button:hover,
+    .btn:hover {
+      background-color: #66bb6a;
+    }
+
+    .delete-btn {
+      background-color: #ef5350;
+      margin-left: 10px;
+    }
+
+    .delete-btn:hover {
+      background-color: #e53935;
+    }
+
+    .icon {
+      margin-right: 6px;
+    }
+
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    li {
+      margin-bottom: 12px;
+    }
+
+    a {
+      text-decoration: none;
+      color: #1a237e;
+      font-weight: bold;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    #progress-container {
+      display: none;
+      margin-top: 10px;
+    }
+
+    #progress-wrapper {
+      width: 100%;
+      background-color: #c8e6c9;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    #progress-bar {
+      width: 0%;
+      height: 20px;
+      background-color: #66bb6a;
+      text-align: center;
+      color: white;
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Administração de Encartes</h1>
+
+  <form id="uploadForm" enctype="multipart/form-data">
+    <input type="file" name="file" required>
+    <button type="submit"><span class="icon">📤</span>Enviar</button>
+
+    <div id="progress-container">
+      <div id="progress-wrapper">
+        <div id="progress-bar">0%</div>
+      </div>
+    </div>
+  </form>
+
+  <h2>Arquivos Disponíveis</h2>
+  <ul id="fileList"></ul>
+
+  <script>
+    // Recarrega arquivos
+    function carregarArquivos() {
+      fetch('/files')
+        .then(res => res.json())
+        .then(files => {
+          const list = document.getElementById('fileList');
+          list.innerHTML = '';
+          files.forEach(file => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+              <a href="/uploads/${file}" target="_blank">${file}</a>
+              <a href="#" class="btn delete-btn" onclick="confirmarExclusao('${file}', event)">🗑️ Deletar</a>
+            `;
+            list.appendChild(li);
+          });
+        });
+    }
+
+    carregarArquivos();
+
+    // Confirmação antes de deletar
+    function confirmarExclusao(fileName, event) {
+      event.preventDefault();
+      if (confirm(`Deseja realmente deletar o arquivo "${fileName}"?`)) {
+        window.location.href = `/delete/${fileName}`;
+      }
+    }
+
+    // Envio com barra de progresso
+    const form = document.getElementById('uploadForm');
+    const progressBar = document.getElementById('progress-bar');
+    const progressContainer = document.getElementById('progress-container');
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const fileInput = form.querySelector('input[type="file"]');
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/upload', true);
+
+      xhr.upload.onprogress = function (e) {
+        if (e.lengthComputable) {
+          const percent = Math.round((e.loaded / e.total) * 100);
+          progressBar.style.width = percent + '%';
+          progressBar.textContent = percent + '%';
+        }
+      };
+
+      xhr.onloadstart = function () {
+        progressContainer.style.display = 'block';
+        progressBar.style.width = '0%';
+        progressBar.textContent = '0%';
+      };
+
+      xhr.onloadend = function () {
+        setTimeout(() => {
+          progressContainer.style.display = 'none';
+          progressBar.style.width = '0%';
+          progressBar.textContent = '';
+        }, 1000);
+        form.reset();
+        carregarArquivos();
+      };
+
+      xhr.send(formData);
+    });
+  </script>
+</body>
+
+</html>

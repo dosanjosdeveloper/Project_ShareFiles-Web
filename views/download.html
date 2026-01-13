@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Downloads</title>
+  <style>
+    body {
+      background-color: #e8f5e9;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      color: #2e7d32;
+    }
+
+    h1 {
+      color: #1b5e20;
+      margin-bottom: 20px;
+    }
+
+    .file-item {
+      margin-bottom: 10px;
+    }
+
+    .download-btn {
+      display: inline-flex;
+      align-items: center;
+      background-color: #81c784;
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      padding: 10px 16px;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+      border: none;
+    }
+
+    .download-btn:hover {
+      background-color: #66bb6a;
+    }
+
+    .download-icon {
+      margin-right: 8px;
+    }
+
+    .file-info {
+      font-size: 0.9em;
+      color: #388e3c;
+      margin-left: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Arquivos para Download</h1>
+  <div id="downloadList"></div>
+
+  <script>
+    function formatSize(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    fetch('/fileinfo') // Supondo que você crie essa rota no backend
+      .then(res => res.json())
+      .then(files => {
+        const list = document.getElementById('downloadList');
+        // Ordena por data decrescente (mais recente primeiro)
+        files.sort((a, b) => new Date(b.modified) - new Date(a.modified));
+
+        files.forEach(file => {
+          const item = document.createElement('div');
+          item.className = 'file-item';
+
+          item.innerHTML = `
+    <a class="download-btn" href="/uploads/${file.name}" download>
+      <span class="download-icon">⬇️</span> ${file.name}
+    </a>
+    <span class="file-info">${formatSize(file.size)} - ${new Date(file.modified).toLocaleDateString()}</span>
+  `;
+          list.appendChild(item);
+        });
+
+      });
+  </script>
+</body>
+
+</html>
